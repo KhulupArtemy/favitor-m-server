@@ -10,6 +10,16 @@ const User = sequelize.define('users', {
     timestamps: false
 })
 
+const CalculationParameter = sequelize.define('calculationParameters', {
+    id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
+    userId: {type: DataTypes.INTEGER, allowNull: false},
+    softwareName: {type: DataTypes.STRING, allowNull: false},
+    softwareNumber: {type: DataTypes.INTEGER, unique: true, allowNull: false},
+    keyExpirationDate: {type: DataTypes.DATEONLY, allowNull: false},
+}, {
+    timestamps: false
+})
+
 const Item = sequelize.define('items', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
     itemPosition: {type: DataTypes.INTEGER, allowNull: false},
@@ -31,7 +41,6 @@ const ItemRow = sequelize.define('itemRows', {
     timestamps: false
 })
 
-
 Item.hasMany(ItemRow, {
     foreignKey: {
         name: 'itemId',
@@ -43,8 +52,20 @@ Item.hasMany(ItemRow, {
 })
 ItemRow.belongsTo(Item)
 
+User.hasMany(CalculationParameter, {
+    foreignKey: {
+        name: 'userId',
+        allowNull: false
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+    hooks: true
+})
+CalculationParameter.belongsTo(User)
+
 module.exports = {
     User,
+    CalculationParameter,
     Item,
     ItemRow
 }

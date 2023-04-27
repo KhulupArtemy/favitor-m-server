@@ -1,6 +1,6 @@
 const ApiError = require('../error/ApiError')
 const jwt = require('jsonwebtoken')
-const {User} = require('../models/models')
+const {User, CalculationParameter} = require('../models/models')
 
 const generateJwt = (id, userLogin, userRole) => {
     return jwt.sign(
@@ -51,6 +51,45 @@ class UserController {
     async check(req, res) {
         const token = generateJwt(req.user.id, req.user.userLogin, req.user.userRole)
         return res.json({token})
+    }
+
+    async createCalculationParameters (req, res, next) {
+        try {
+            const {userLogin, softwareName, softwareNumber, keyExpirationDate} = req.body
+
+            if (!userLogin || !softwareName || !softwareNumber || !keyExpirationDate) {
+                return next(ApiError.badRequest('Не все поля заполнены'))
+            }
+
+            const user = await User.findOne({where: {userLogin}})
+
+            if (!user) {
+                return next(ApiError.badRequest('Пользователь с указанным логином не найден'))
+            }
+
+            const userId = user.id
+            await CalculationParameter.create({userId, softwareName, softwareNumber, keyExpirationDate})
+            return res.json('Расчетные параметры успешно добавлены для указанного пользователя')
+        } catch (e) {
+            next(ApiError.badRequest(e.message))
+        }
+    }
+
+    async getCalculationParameters (req, res, next) {
+        try {
+            const token = req.headers.authorization.split(' ')[1]
+            const decoded = jwt.verify(token, process.env.SECRET_KEY)
+
+            if (!decoded.id){
+                return next(ApiError.badRequest('Пользователь не найден'))
+            }
+
+            const userId = decoded.id
+            const userCalculationParameters = await CalculationParameter.findAll({where: {userId}})
+            return res.json(userCalculationParameters)
+        } catch (e) {
+            next(ApiError.badRequest(e.message))
+        }
     }
 }
 
