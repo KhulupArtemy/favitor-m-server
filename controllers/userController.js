@@ -62,7 +62,6 @@ class UserController {
             }
 
             const user = await User.findOne({where: {userLogin}})
-
             if (!user) {
                 return next(ApiError.badRequest('Пользователь с указанным логином не найден'))
             }

@@ -1,11 +1,11 @@
 const Router = require('express')
 const router = new Router()
 const userRouter = require('./userRouter')
-const itemRouter = require('./itemRouter')
-const itemRowRouter = require('./itemRowRouter')
+const categoryRouter = require('./categoryRouter')
+const programRouter = require('./programRouter')
 
 router.use('/user', userRouter)
-router.use('/item', itemRouter)
-router.use('/row', itemRowRouter)
+router.use('/category', categoryRouter)
+router.use('/program', programRouter)
 
 module.exports = router

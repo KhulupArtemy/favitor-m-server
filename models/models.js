@@ -13,51 +13,48 @@ const User = sequelize.define('users', {
 const CalculationParameter = sequelize.define('calculationParameters', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
     userId: {type: DataTypes.INTEGER, allowNull: false},
+    softwareNumber: {type: DataTypes.INTEGER, allowNull: false},
     softwareName: {type: DataTypes.STRING, allowNull: false},
-    softwareNumber: {type: DataTypes.INTEGER, unique: true, allowNull: false},
     keyExpirationDate: {type: DataTypes.DATEONLY, allowNull: false},
 }, {
     timestamps: false
 })
 
-const Item = sequelize.define('items', {
+const ProgramCategory = sequelize.define('programCategories', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
-    itemPosition: {type: DataTypes.INTEGER, allowNull: false},
-    title: {type: DataTypes.STRING, unique: true, allowNull: false}
+    categoryPosition: {type: DataTypes.INTEGER, allowNull: false},
+    nameCategory: {type: DataTypes.STRING, unique: true, allowNull: false}
 }, {
     timestamps: false
 })
 
-const ItemRow = sequelize.define('itemRows', {
+const Program = sequelize.define('programs', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
-    itemId: {type: DataTypes.INTEGER, allowNull: false},
-    rowPosition: {type: DataTypes.INTEGER, allowNull: false},
-    serialNumber: {type: DataTypes.INTEGER},
-    softwareName: {type: DataTypes.STRING, allowNull: false},
-    linkText: {type: DataTypes.STRING},
-    link: {type: DataTypes.TEXT},
-    softwareVersion: {type: DataTypes.STRING}
+    programCategoryId: {type: DataTypes.INTEGER, allowNull: false},
+    programPosition: {type: DataTypes.INTEGER, allowNull: false},
+    softwareName: {type: DataTypes.STRING, allowNull: false}
 }, {
     timestamps: false
 })
 
-Item.hasMany(ItemRow, {
+// Не работает onUpdate: CASCADE
+// Добавить триггеры
+
+ProgramCategory.hasMany(Program, {
     foreignKey: {
-        name: 'itemId',
+        name: 'programCategoryId',
         allowNull: false
     },
-    onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
     hooks: true
 })
-ItemRow.belongsTo(Item)
+Program.belongsTo(ProgramCategory)
 
 User.hasMany(CalculationParameter, {
     foreignKey: {
         name: 'userId',
         allowNull: false
     },
-    onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
     hooks: true
 })
@@ -66,6 +63,6 @@ CalculationParameter.belongsTo(User)
 module.exports = {
     User,
     CalculationParameter,
-    Item,
-    ItemRow
+    ProgramCategory,
+    Program
 }
