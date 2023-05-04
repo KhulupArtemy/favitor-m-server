@@ -53,11 +53,21 @@ class UserController {
         return res.json({token})
     }
 
+    async getUserLogins (req, res, next) {
+        try {
+            const logins = await User.sequelize.query('SELECT userLogin FROM users')
+            return res.json(logins[0])
+        } catch (e) {
+            next(ApiError.badRequest(e.message))
+        }
+    }
+
+
     async createCalculationParameters (req, res, next) {
         try {
-            const {userLogin, softwareName, softwareNumber, keyExpirationDate} = req.body
+            const {userLogin, softwareNumber, softwareName, downloadLink, workstationsNumber, keyExpirationDate} = req.body
 
-            if (!userLogin || !softwareName || !softwareNumber || !keyExpirationDate) {
+            if (!userLogin || !softwareName || !softwareNumber || !keyExpirationDate || !downloadLink || !workstationsNumber) {
                 return next(ApiError.badRequest('Не все поля заполнены'))
             }
 
@@ -67,7 +77,7 @@ class UserController {
             }
 
             const userId = user.id
-            await CalculationParameter.create({userId, softwareName, softwareNumber, keyExpirationDate})
+            await CalculationParameter.create({userId, softwareName, softwareNumber, downloadLink, workstationsNumber, keyExpirationDate})
             return res.json('Расчетные параметры успешно добавлены для указанного пользователя')
         } catch (e) {
             next(ApiError.badRequest(e.message))
@@ -84,8 +94,8 @@ class UserController {
             }
 
             const userId = decoded.id
-            const userCalculationParameters = await CalculationParameter.findAll({where: {userId}})
-            return res.json(userCalculationParameters)
+            const calculationParameters = await CalculationParameter.findAll({where: {userId}})
+            return res.json(calculationParameters)
         } catch (e) {
             next(ApiError.badRequest(e.message))
         }

@@ -8,6 +8,7 @@ router.post('/registration', checkRole('ADMIN'), userController.registration)
 router.post('/login', userController.login)
 router.post('/createCalculationParameters', checkRole('ADMIN'), userController.createCalculationParameters)
 router.get('/auth', authMiddleware, userController.check)
+router.get('/getUserLogins', checkRole('ADMIN'), userController.getUserLogins)
 router.get('/getCalculationParameters', authMiddleware, userController.getCalculationParameters)
 
 module.exports = router

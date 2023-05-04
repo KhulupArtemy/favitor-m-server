@@ -91,13 +91,13 @@ class CategoryController {
 
     async updateOneCategory (req, res, next) {
         try {
-            const {nameCategory, newName} = req.body
+            const {nameCategory, newNameCategory} = req.body
 
-            if (!newName.length) {
+            if (!newNameCategory.length) {
                 return next(ApiError.badRequest('Для добавления требуется ввести название категории'))
             }
 
-            if (newName.length > 255) {
+            if (newNameCategory.length > 255) {
                 return next(ApiError.badRequest('Название категории не должно превышать 255 символа'))
             }
 
@@ -106,12 +106,12 @@ class CategoryController {
                 return next(ApiError.badRequest('Категории c выбранным названием не существует'))
             }
 
-            const newCategory = await ProgramCategory.findOne({where: {nameCategory: newName}})
+            const newCategory = await ProgramCategory.findOne({where: {nameCategory: newNameCategory}})
             if (newCategory) {
                 return next(ApiError.badRequest('Категория c таким названием уже существует'))
             }
 
-            await ProgramCategory.update({nameCategory: newName}, {
+            await ProgramCategory.update({nameCategory: newNameCategory}, {
                 where: {nameCategory}
             })
             return res.json('Изменение произошло успешно')

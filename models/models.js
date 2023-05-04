@@ -15,7 +15,9 @@ const CalculationParameter = sequelize.define('calculationParameters', {
     userId: {type: DataTypes.INTEGER, allowNull: false},
     softwareNumber: {type: DataTypes.INTEGER, allowNull: false},
     softwareName: {type: DataTypes.STRING, allowNull: false},
+    workstationsNumber: {type: DataTypes.INTEGER, allowNull: false},
     keyExpirationDate: {type: DataTypes.DATEONLY, allowNull: false},
+    downloadLink: {type: DataTypes.TEXT},
 }, {
     timestamps: false
 })
