@@ -4,11 +4,11 @@ const userController = require('../controllers/userController')
 const authMiddleware = require('../middleware/AuthMiddleware')
 const checkRole = require("../middleware/CheckRoleMiddleware");
 
-router.post('/registration', checkRole('ADMIN'), userController.registration)
+router.post('/createUserAccount', checkRole('ADMIN'), userController.createUserAccount)
 router.post('/login', userController.login)
-router.post('/createCalculationParameters', checkRole('ADMIN'), userController.createCalculationParameters)
 router.get('/auth', authMiddleware, userController.check)
 router.get('/getUserLogins', checkRole('ADMIN'), userController.getUserLogins)
-router.get('/getCalculationParameters', authMiddleware, userController.getCalculationParameters)
+router.put('/updateUserLogin', checkRole('ADMIN'), userController.updateUserLogin)
+router.post('/deleteUserAccount', checkRole('ADMIN'), userController.deleteUserAccount)
 
 module.exports = router

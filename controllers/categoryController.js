@@ -94,7 +94,7 @@ class CategoryController {
             const {nameCategory, newNameCategory} = req.body
 
             if (!newNameCategory.length) {
-                return next(ApiError.badRequest('Для добавления требуется ввести название категории'))
+                return next(ApiError.badRequest('Для изменения требуется ввести название категории'))
             }
 
             if (newNameCategory.length > 255) {

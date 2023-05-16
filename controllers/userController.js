@@ -1,6 +1,6 @@
 const ApiError = require('../error/ApiError')
 const jwt = require('jsonwebtoken')
-const {User, CalculationParameter} = require('../models/models')
+const {User} = require('../models/models')
 
 const generateJwt = (id, userLogin, userRole) => {
     return jwt.sign(
@@ -11,7 +11,7 @@ const generateJwt = (id, userLogin, userRole) => {
 }
 
 class UserController {
-    async registration (req, res, next) {
+    async createUserAccount (req, res, next) {
         const {userLogin, userPassword} = req.body
 
         if (!userLogin || !userPassword){
@@ -62,40 +62,48 @@ class UserController {
         }
     }
 
-
-    async createCalculationParameters (req, res, next) {
+    async updateUserLogin (req, res, next) {
         try {
-            const {userLogin, softwareNumber, softwareName, downloadLink, workstationsNumber, keyExpirationDate} = req.body
+            const {userLogin, newLogin} = req.body
 
-            if (!userLogin || !softwareName || !softwareNumber || !keyExpirationDate || !downloadLink || !workstationsNumber) {
-                return next(ApiError.badRequest('Не все поля заполнены'))
+            if (newLogin.length < 5){
+                return next(ApiError.badRequest('Логин не должен быть короче 5 символов'))
             }
 
-            const user = await User.findOne({where: {userLogin}})
-            if (!user) {
-                return next(ApiError.badRequest('Пользователь с указанным логином не найден'))
+            const oldLogin = await User.findOne({where: {userLogin}})
+            if (!oldLogin) {
+                return next(ApiError.badRequest('Пользователь с указанным логином не существует'))
             }
 
-            const userId = user.id
-            await CalculationParameter.create({userId, softwareName, softwareNumber, downloadLink, workstationsNumber, keyExpirationDate})
-            return res.json('Расчетные параметры успешно добавлены для указанного пользователя')
+            const candidateLogin = await User.findOne({where: {userLogin: newLogin}})
+            if (candidateLogin) {
+                return next(ApiError.badRequest('Пользователь с таким логином уже существует'))
+            }
+
+            await User.update({userLogin: newLogin}, {
+                where: {userLogin}
+            })
+            return res.json('Изменение произошло успешно')
         } catch (e) {
             next(ApiError.badRequest(e.message))
         }
     }
 
-    async getCalculationParameters (req, res, next) {
+    async deleteUserAccount (req, res, next) {
         try {
-            const token = req.headers.authorization.split(' ')[1]
-            const decoded = jwt.verify(token, process.env.SECRET_KEY)
+            const {userLogin} = req.body
 
-            if (!decoded.id){
-                return next(ApiError.badRequest('Пользователь не найден'))
+            const candidateLogin = await User.findOne({where: {userLogin}})
+            if (!candidateLogin) {
+                return next(ApiError.badRequest('Пользователь с указанным логином не существует'))
             }
 
-            const userId = decoded.id
-            const calculationParameters = await CalculationParameter.findAll({where: {userId}})
-            return res.json(calculationParameters)
+            if (candidateLogin.userRole === 'ADMIN') {
+                return next(ApiError.badRequest('Невозможно удалить аккаунт администратора'))
+            }
+
+            await User.destroy({where: {userLogin}})
+            return res.json('Удаление произошло успешно')
         } catch (e) {
             next(ApiError.badRequest(e.message))
         }
