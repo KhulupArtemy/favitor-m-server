@@ -1,14 +1,14 @@
 const ApiError = require("../error/ApiError");
-const {User, CalculationParameter} = require("../models/models");
+const {User, CalculationParameter, Program} = require("../models/models");
 const jwt = require("jsonwebtoken");
 const ffi = require("ffi-napi");
 
 class CalculationParameterController {
     async createCalculationParameters (req, res, next) {
         try {
-            const {userLogin, softwareNumber, softwareName, downloadLink, workstationsNumber, keyExpirationDate} = req.body
+            const {userLogin, softwareName, downloadLink, workstationsNumber, keyExpirationDate} = req.body
 
-            if (!userLogin || !softwareName || !softwareNumber || !keyExpirationDate || !downloadLink || !workstationsNumber) {
+            if (!userLogin || !softwareName || !keyExpirationDate || !downloadLink || !workstationsNumber) {
                 return next(ApiError.badRequest('Не все поля заполнены'))
             }
 
@@ -17,8 +17,18 @@ class CalculationParameterController {
                 return next(ApiError.badRequest('Пользователь с указанным логином не найден'))
             }
 
+            const program = await Program.findOne({where: {softwareName}})
+            if (!program) {
+                return next(ApiError.badRequest('Программа с указанным названием не найдена'))
+            }
+
+            if (!Number.isInteger(Number(workstationsNumber))){
+                return next(ApiError.badRequest('Неверный формат количества АРМ. Введите целое число'))
+            }
+
             const userId = user.id
-            await CalculationParameter.create({userId, softwareName, softwareNumber, downloadLink, workstationsNumber, keyExpirationDate})
+            const programId = program.id
+            await CalculationParameter.create({userId, programId, downloadLink, workstationsNumber, keyExpirationDate})
             return res.json('Расчетные параметры успешно добавлены для указанного пользователя')
         } catch (e) {
             next(ApiError.badRequest(e.message))
@@ -35,8 +45,11 @@ class CalculationParameterController {
             }
 
             const userId = decoded.id
-            const calculationParameters = await CalculationParameter.findAll({where: {userId}})
-            return res.json(calculationParameters)
+            const calculationParameters = await CalculationParameter.sequelize.query(`SELECT programs.softwareName, calculationParameters.programId, calculationParameters.userId, 
+                calculationParameters.workstationsNumber, calculationParameters.downloadLink, calculationParameters.keyExpirationDate 
+                FROM calculationParameters INNER JOIN programs ON calculationParameters.programId = programs.id
+                WHERE calculationParameters.userId = `+userId+` ORDER BY calculationParameters.keyExpirationDate`)
+            return res.json(calculationParameters[0])
         } catch (e) {
             next(ApiError.badRequest(e.message))
         }
@@ -44,9 +57,9 @@ class CalculationParameterController {
 
     async getRegistrationKey (req, res, next) {
         try {
-            const {softwareNumber, userId, workstationsNumber, keyExpirationDate, serialNumber} = req.body
+            const {programId, userId, workstationsNumber, keyExpirationDate, serialNumber} = req.body
 
-            if (!softwareNumber || !userId || !workstationsNumber || !keyExpirationDate){
+            if (!programId || !userId || !workstationsNumber || !keyExpirationDate){
                 return next(ApiError.badRequest('Заданы не все рассчетные параметры'))
             }
 
@@ -54,7 +67,7 @@ class CalculationParameterController {
                 return next(ApiError.badRequest('Вы не указали серийный номер'))
             }
 
-            if (!Number.isInteger(Number(serialNumber)) || serialNumber.length != 16){
+            if (String(parseInt(serialNumber)).length !== 16 || serialNumber.length !== 16){
                 return next(ApiError.badRequest('Неверный формат серийного номера'))
             }
 
@@ -70,7 +83,7 @@ class CalculationParameterController {
                 ],
             })
 
-            const RK = snrkLib.GetRKValue(String(softwareNumber), String(userId), String(workstationsNumber), String(keyExpirationDate), String(serialNumber))
+            const RK = snrkLib.GetRKValue(String(programId), String(userId), String(workstationsNumber), String(keyExpirationDate), String(serialNumber))
 
             return res.json(RK)
         } catch (e) {
@@ -80,10 +93,12 @@ class CalculationParameterController {
 
     async getCalculationParameters (req, res, next) {
         try {
-            const calculationParameters = await CalculationParameter.sequelize.query(`SELECT calculationParameters.id, users.userLogin, calculationParameters.softwareNumber, 
-                calculationParameters.softwareName, calculationParameters.workstationsNumber, 
-                calculationParameters.keyExpirationDate, calculationParameters.downloadLink 
-                FROM calculationParameters INNER JOIN users ON calculationParameters.userId = users.id;`)
+            const calculationParameters = await CalculationParameter.sequelize.query(`SELECT calculationParameters.id, users.userLogin, programs.softwareName, 
+                calculationParameters.workstationsNumber, calculationParameters.keyExpirationDate, 
+                calculationParameters.downloadLink FROM calculationParameters 
+                INNER JOIN users ON calculationParameters.userId = users.id
+                INNER JOIN programs ON calculationParameters.programId = programs.id
+                ORDER BY calculationParameters.keyExpirationDate, users.userLogin`)
             return res.json(calculationParameters[0])
         } catch (e) {
             next(ApiError.badRequest(e.message))
@@ -92,13 +107,23 @@ class CalculationParameterController {
 
     async updateCalculationParameter (req, res, next) {
         try {
-            const {id, softwareNumber, softwareName, downloadLink, workstationsNumber, keyExpirationDate} = req.body
+            const {id, softwareName, downloadLink, workstationsNumber, keyExpirationDate} = req.body
 
-            if (!softwareName || !softwareNumber || !keyExpirationDate || !downloadLink || !workstationsNumber) {
+            if (!softwareName || !keyExpirationDate || !downloadLink || !workstationsNumber) {
                 return next(ApiError.badRequest('Не все поля заполнены'))
             }
 
-            await CalculationParameter.update({softwareNumber, softwareName, downloadLink, workstationsNumber, keyExpirationDate}, {
+            const program = await Program.findOne({where: {softwareName}})
+            if (!program) {
+                return next(ApiError.badRequest('Программа с указанным названием не найдена'))
+            }
+
+            if (!Number.isInteger(Number(workstationsNumber))){
+                return next(ApiError.badRequest('Неверный формат количества АРМ. Введите целое число'))
+            }
+
+            const programId = program.id
+            await CalculationParameter.update({programId, downloadLink, workstationsNumber, keyExpirationDate}, {
                     where: {id}
             })
             return res.json('Изменение произошло успешно')

@@ -18,12 +18,12 @@ class UserController {
             return next(ApiError.badRequest('Не все поля заполнены'))
         }
 
-        if (userLogin.length < 5){
-            return next(ApiError.badRequest('Логин не должен быть короче 5 символов'))
+        if (userLogin.length < 5 || userLogin.length > 255){
+            return next(ApiError.badRequest('Логин не должен быть короче 5 символов или больше 255 символов'))
         }
 
-        if (userPassword.length < 5){
-            return next(ApiError.badRequest('Пароль не должен быть короче 5 символов'))
+        if (userPassword.length < 5 || userPassword.length > 255){
+            return next(ApiError.badRequest('Пароль не должен быть короче 5 символов или больше 255 символов'))
         }
 
         const candidateLogin = await User.findOne({where: {userLogin}})
@@ -66,8 +66,8 @@ class UserController {
         try {
             const {userLogin, newLogin} = req.body
 
-            if (newLogin.length < 5){
-                return next(ApiError.badRequest('Логин не должен быть короче 5 символов'))
+            if (newLogin.length < 5 || newLogin.length > 255){
+                return next(ApiError.badRequest('Логин не должен быть короче 5 символов или больше 255 символов'))
             }
 
             const oldLogin = await User.findOne({where: {userLogin}})

@@ -12,7 +12,7 @@ class ProgramController {
             }
 
             if (softwareName.length > 255) {
-                return next(ApiError.badRequest('Название программного продукта не должно превышать 255 символа'))
+                return next(ApiError.badRequest('Наименование программного продукта не должно превышать 255 символа'))
             }
 
             await Program.sequelize.query('insert into programs values('+programCategoryId+', 1, \''+softwareName+'\')')
@@ -32,7 +32,7 @@ class ProgramController {
             }
 
             if (softwareName.length > 255) {
-                return next(ApiError.badRequest('Название программного продукта не должно превышать 255 символа'))
+                return next(ApiError.badRequest('Наименование программного продукта не должно превышать 255 символа'))
             }
 
             await Program.sequelize.query('insert into programs values('+programCategoryId+', (SELECT COALESCE(MAX(programPosition), 0) FROM programs WHERE programCategoryId = \''+programCategoryId+'\') + 1, \''+softwareName+'\')')
@@ -52,7 +52,7 @@ class ProgramController {
             }
 
             if (softwareName.length > 255) {
-                return next(ApiError.badRequest('Название программного продукта не должно превышать 255 символа'))
+                return next(ApiError.badRequest('Наименование программного продукта не должно превышать 255 символа'))
             }
 
             await Program.sequelize.query('insert into programs values('+programCategoryId+', (SELECT programPosition + 1 FROM programs WHERE id='+id+'), \''+softwareName+'\')')
@@ -62,7 +62,7 @@ class ProgramController {
         }
     }
 
-    async getAllPrograms (req, res, next) {
+    async getProgramsSelectedCategory (req, res, next) {
         try {
             const {programCategoryId} = req.params
             const programs = await Program.findAll({order: ['programPosition'], where: {programCategoryId}})
@@ -91,6 +91,15 @@ class ProgramController {
 
             await Program.destroy({where: {id}})
             return res.json('Удаление произошло успешно')
+        } catch (e) {
+            next(ApiError.badRequest(e.message))
+        }
+    }
+
+    async getPrograms (req, res, next) {
+        try {
+            const programs = await Program.sequelize.query('SELECT softwareName FROM programs')
+            return res.json(programs[0])
         } catch (e) {
             next(ApiError.badRequest(e.message))
         }
