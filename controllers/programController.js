@@ -8,11 +8,16 @@ class ProgramController {
             const {softwareName} = req.body
 
             if (!softwareName.length) {
-                return next(ApiError.badRequest('Для добавления требуется ввести название программного продукта'))
+                return next(ApiError.badRequest('Для добавления требуется ввести наименование программы'))
             }
 
             if (softwareName.length > 255) {
-                return next(ApiError.badRequest('Наименование программного продукта не должно превышать 255 символа'))
+                return next(ApiError.badRequest('Наименование программы не должно превышать 255 символа'))
+            }
+
+            const program = await Program.findOne({where: {softwareName}})
+            if (program) {
+                return next(ApiError.badRequest('Программа с таким наименованием уже существует'))
             }
 
             await Program.sequelize.query('insert into programs values('+programCategoryId+', 1, \''+softwareName+'\')')
@@ -28,11 +33,16 @@ class ProgramController {
             const {softwareName} = req.body
 
             if (!softwareName.length) {
-                return next(ApiError.badRequest('Для добавления требуется ввести название программного продукта'))
+                return next(ApiError.badRequest('Для добавления требуется ввести наименование программы'))
             }
 
             if (softwareName.length > 255) {
-                return next(ApiError.badRequest('Наименование программного продукта не должно превышать 255 символа'))
+                return next(ApiError.badRequest('Наименование программы не должно превышать 255 символа'))
+            }
+
+            const program = await Program.findOne({where: {softwareName}})
+            if (program) {
+                return next(ApiError.badRequest('Программа с таким наименованием уже существует'))
             }
 
             await Program.sequelize.query('insert into programs values('+programCategoryId+', (SELECT COALESCE(MAX(programPosition), 0) FROM programs WHERE programCategoryId = \''+programCategoryId+'\') + 1, \''+softwareName+'\')')
@@ -48,11 +58,21 @@ class ProgramController {
             const {id, softwareName} = req.body
 
             if (!softwareName.length) {
-                return next(ApiError.badRequest('Для добавления требуется ввести название программного продукта'))
+                return next(ApiError.badRequest('Для добавления требуется ввести наименование программы'))
             }
 
             if (softwareName.length > 255) {
-                return next(ApiError.badRequest('Наименование программного продукта не должно превышать 255 символа'))
+                return next(ApiError.badRequest('Наименование программы не должно превышать 255 символа'))
+            }
+
+            const afterProgram = await Program.findOne({where: {id}})
+            if (!afterProgram) {
+                return next(ApiError.badRequest('Программа после которой происходит добавление не найдена'))
+            }
+
+            const program = await Program.findOne({where: {softwareName}})
+            if (program) {
+                return next(ApiError.badRequest('Программа с таким наименованием уже существует'))
             }
 
             await Program.sequelize.query('insert into programs values('+programCategoryId+', (SELECT programPosition + 1 FROM programs WHERE id='+id+'), \''+softwareName+'\')')
@@ -76,6 +96,24 @@ class ProgramController {
         try {
             const {id, softwareName} = req.body
 
+            if (!softwareName.length) {
+                return next(ApiError.badRequest('Для изменения требуется ввести наименование программы'))
+            }
+
+            if (softwareName.length > 255) {
+                return next(ApiError.badRequest('Наименование программы не должно превышать 255 символа'))
+            }
+
+            const program = await Program.findOne({where: {id}})
+            if (!program) {
+                return next(ApiError.badRequest('Изменяемая программа не найдена'))
+            }
+
+            const newProgram = await Program.findOne({where: {softwareName}})
+            if (newProgram) {
+                return next(ApiError.badRequest('Программа c таким наименованием уже существует'))
+            }
+
             await Program.update({softwareName}, {
                 where: {id}
             })
@@ -88,6 +126,11 @@ class ProgramController {
     async deleteOneProgram (req, res, next) {
         try {
             const {id} = req.body
+
+            const program = await Program.findOne({where: {id}})
+            if (!program) {
+                return next(ApiError.badRequest('Удаляемая программа не найдена'))
+            }
 
             await Program.destroy({where: {id}})
             return res.json('Удаление произошло успешно')
